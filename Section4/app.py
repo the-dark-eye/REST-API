@@ -1,12 +1,20 @@
 from flask import Flask, request
 from flask_restful import Api, Resource
+from flask_jwt import JWT, jwt_required
+
+from security import authenticate, identity
 
 app = Flask(__name__)
 api = Api(app)
 
+app.secret_key = 'yoshimitsu'
+
+jwt = JWT(app, authenticate, identity)  # /auth
+
 items = []
 
 class Items(Resource):
+    @jwt_required()
     def get(self, name):
         """GET method implementation"""
         item = next(filter(lambda x: x["name"] == name, items), None)
@@ -34,4 +42,3 @@ api.add_resource(Items, '/item/<string:name>')
 
 if __name__ == "__main__":
     app.run(debug=True)
-    
