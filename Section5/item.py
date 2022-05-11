@@ -12,6 +12,15 @@ class Items(Resource):
     def get(self, name):
         """GET method implementation"""
         
+        item = self.find_by_name(name)
+        
+        if item:
+            return item, 200
+    
+        return {'message': 'Item not found'}, 404
+        
+    @classmethod
+    def find_by_name(cls, name):
         connection = sqlite3.connect('database.db')
         cursor = connection.cursor()
         
@@ -22,32 +31,40 @@ class Items(Resource):
         connection.close()
         
         if row:
-            return {'items': {'name': row[0], 'price': row[1]}}, 200
-    
-        return {'message': 'Item not found'}, 404
-        
+            return {'items': {'name': row[0], 'price': row[1]}}
     
     def post(self, name):
         """POST method implementation"""
                
-        if next(filter(lambda x: x["name"] == name, items), None):
+        if self.find_by_name(name):
             return {'message': 'Item with name {} already exists'.format(name)}, 400
         
         data = self.parser.parse_args()
         new_item = {"name": name, "price": data['price']}
-        items.append(new_item)
+        
+        connection = sqlite3.connect('database.db')
+        cursor = connection.cursor()
+        
+        query = "INSERT INTO items VALUES (?, ?)"
+        cursor.execute(query, (new_item['name'], new_item['price']))
+        
+        connection.commit()        
+        connection.close()
         
         return new_item, 201
     
     def delete(self, name):
         
-        global items
+        connection = sqlite3.connect('database.db')
+        cursor = connection.cursor()
         
-        if next(filter(lambda x: x['name'] == name, items), None):
-            items = list(filter(lambda x: x['name'] != name, items))
-            return {'message': f'Item {name} deleted'}, 200
+        query = "DELETE FROM items WHERE name=?"
+        cursor.execute(query, (name, ))
         
-        return {'message': f'Item {name} does not exist'}, 400
+        connection.commit()
+        connection.close()
+        
+        return {'message': f'Item {name} deleted'}, 200
     
     def put(self, name):
               
