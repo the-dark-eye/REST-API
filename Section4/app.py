@@ -14,6 +14,7 @@ jwt = JWT(app, authenticate, identity)  # /auth
 items = []
 
 class Items(Resource):
+    
     @jwt_required()
     def get(self, name):
         """GET method implementation"""
@@ -31,8 +32,30 @@ class Items(Resource):
         items.append(new_item)
         
         return new_item, 201
+    
+    def delete(self, name):
+        global items
         
+        if next(filter(lambda x: x['name'] == name, items), None):
+            items = list(filter(lambda x: x['name'] != name, items))
+            return {'message': f'Item {name} deleted'}, 200
+        
+        return {'message': f'Item {name} does not exist'}, 400
+    
+    def put(self, name):
+        data = request.get_json()
+        item = next(filter(lambda x: x['name'] == name, items), None)
+        
+        if not item:
+            item = {'name': name, 'price': data['price']}
+            items.append(item)
+        else:
+            item.update(data)       
+            
+        return item
+    
 class itemList(Resource):
+    
     def get(self):
         """Get item list method"""
         return {"items": items}, 200
