@@ -1,7 +1,7 @@
-from flask import FLASK, request
+from flask import Flask, request
 from flask_restful import Api, Resource
 
-app = FLASK(__name__)
+app = Flask(__name__)
 api = Api(app)
 
 items = []
@@ -12,11 +12,11 @@ class Items(Resource):
         item = next(filter(lambda x: x["name"] == name, items), None)
         return {'item': item}, 200 if item else 404
     
-    def create(self, name):
+    def post(self, name):
         """POST method implementation"""
                
         if next(filter(lambda x: x["name"] == name, items), None):
-            return {'Item with name {} already exists'.format(name)}, 400
+            return {'message': 'Item with name {} already exists'.format(name)}, 400
         
         post_data = request.get_json()
         new_item = {"name": name, "price": post_data['price']}
@@ -24,16 +24,14 @@ class Items(Resource):
         
         return new_item, 201
         
-    
 class itemList(Resource):
-    def get_items(self):
+    def get(self):
         """Get item list method"""
-        return {"items": items}
+        return {"items": items}, 200
     
 api.add_resource(itemList, '/items')
-api.add_resource(Items, '/item/<string: name>')
+api.add_resource(Items, '/item/<string:name>')
 
 if __name__ == "__main__":
     app.run(debug=True)
     
-
