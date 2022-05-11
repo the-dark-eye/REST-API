@@ -1,5 +1,5 @@
 from flask import Flask, request
-from flask_restful import Api, Resource
+from flask_restful import Api, Resource, reqparse
 from flask_jwt import JWT, jwt_required
 
 from security import authenticate, identity
@@ -15,9 +15,14 @@ items = []
 
 class Items(Resource):
     
+    parser = reqparse.RequestParser()
+    parser.add_argument('price', type=float, required=True
+                            , help="This field cannot be left blank!")
+        
     @jwt_required()
     def get(self, name):
         """GET method implementation"""
+        
         item = next(filter(lambda x: x["name"] == name, items), None)
         return {'item': item}, 200 if item else 404
     
@@ -27,13 +32,14 @@ class Items(Resource):
         if next(filter(lambda x: x["name"] == name, items), None):
             return {'message': 'Item with name {} already exists'.format(name)}, 400
         
-        post_data = request.get_json()
-        new_item = {"name": name, "price": post_data['price']}
+        data = self.parser.parse_args()
+        new_item = {"name": name, "price": data['price']}
         items.append(new_item)
         
         return new_item, 201
     
     def delete(self, name):
+        
         global items
         
         if next(filter(lambda x: x['name'] == name, items), None):
@@ -43,8 +49,9 @@ class Items(Resource):
         return {'message': f'Item {name} does not exist'}, 400
     
     def put(self, name):
-        data = request.get_json()
+              
         item = next(filter(lambda x: x['name'] == name, items), None)
+        data = self.parser.parse_args()
         
         if not item:
             item = {'name': name, 'price': data['price']}
