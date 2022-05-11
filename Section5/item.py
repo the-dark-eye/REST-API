@@ -42,6 +42,15 @@ class Items(Resource):
         data = self.parser.parse_args()
         new_item = {"name": name, "price": data['price']}
         
+        try:
+            self.insert(new_item)
+        except:
+            return {'message': "An error occured inserting the item"}, 500  #internal server error
+        
+        return new_item, 201
+    
+    @classmethod
+    def insert(cls, new_item):
         connection = sqlite3.connect('database.db')
         cursor = connection.cursor()
         
@@ -50,8 +59,6 @@ class Items(Resource):
         
         connection.commit()        
         connection.close()
-        
-        return new_item, 201
     
     def delete(self, name):
         
@@ -68,19 +75,49 @@ class Items(Resource):
     
     def put(self, name):
               
-        item = next(filter(lambda x: x['name'] == name, items), None)
         data = self.parser.parse_args()
+        item = self.find_by_name(name)
+        updated_item = {'name': name, 'price': data['price']}
         
         if not item:
-            item = {'name': name, 'price': data['price']}
-            items.append(item)
+            try:
+                self.insert(updated_item)
+            except:
+                return {'message': "An error occured inserting the item"}, 500
         else:
-            item.update(data)       
-            
-        return item
-    
+            try:
+                self.update(updated_item)       
+            except:
+                return {'message': "An error occured updating the item"}, 500
+        return updated_item
+
+    @classmethod
+    def update(cls, item):
+        connection = sqlite3.connect('database.db')
+        cursor = connection.cursor()
+        
+        query = "UPDATE items SET price=? WHERE name=?"
+        cursor.execute(query, (item['price'], item['name']))
+        
+        connection.commit()
+        connection.close()
+        
 class itemList(Resource):
     
     def get(self):
         """Get item list method"""
-        return {"items": items}, 200
+        
+        connection = sqlite3.connect('database.db')
+        cursor = connection.cursor()
+        
+        query = "SELECT * FROM items"
+        result = cursor.execute(query)
+        
+        items = []
+        
+        for row in result:
+            items.append({'name': row[0], 'price': row[1]})
+        
+        connection.close()
+        
+        return {'items': items}
