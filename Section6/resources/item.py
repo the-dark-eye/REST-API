@@ -34,7 +34,7 @@ class Items(Resource):
         except:
             return {'message': "An error occured inserting the item"}, 500  #internal server error
         
-        return new_item, 201
+        return new_item.json(), 201
     
     def delete(self, name):
         
