@@ -7,6 +7,8 @@ class Items(Resource):
     parser = reqparse.RequestParser()
     parser.add_argument('price', type=float, required=True
                             , help="This field cannot be left blank!")
+    parser.add_argument('store_id', type=float, required=True
+                            , help="Item needs a store ID!")
         
     @jwt_required()
     def get(self, name):
@@ -26,7 +28,7 @@ class Items(Resource):
             return {'message': 'Item with name {} already exists'.format(name)}, 400
         
         data = self.parser.parse_args()
-        new_item = ItemModel(name, data['price'])
+        new_item = ItemModel(name, data['price'], data['store_id'])
         
         try:
             new_item.save_to_db()
@@ -49,7 +51,7 @@ class Items(Resource):
         item = ItemModel.find_by_name(name)
         
         if not item:
-            item = ItemModel(name, data['price'])
+            item = ItemModel(name, data['price'], data['store_id'])
         else:
             item.price = data['price']
         
