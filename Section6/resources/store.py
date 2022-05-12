@@ -18,7 +18,7 @@ class Store(Resource):
         
         try:
             store.save_to_db()
-        except;
+        except:
             return {'message': 'An error occured while creating the store'}, 500
     
     def delete(self, name):
